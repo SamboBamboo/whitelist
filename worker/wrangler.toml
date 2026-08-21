@@ -30,7 +30,7 @@ NORMALIZATION_VERSION = "1"
 BASE_URL = "https://whitelist.sambonius.net"
 SERVER_ADDRESS = "mine.sambonius.net"
 BEDROCK_PORT = "19132"          # confirm against the actual Geyser bind port
-TURNSTILE_SITE_KEY = "REPLACE-WITH-TURNSTILE-SITE-KEY"
+TURNSTILE_SITE_KEY = "0x4AAAAAAEXthZTr2Q2m6ro0"
 EMAIL_FROM = "Whitelist Gateway <whitelist@sambonius.net>"
 
 # Secrets (set with `wrangler secret put NAME`, never committed):
