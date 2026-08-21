@@ -15,7 +15,7 @@ crons = ["17 9 * * *"] # daily maintenance (§5 cron)
 [[d1_databases]]
 binding = "DB"
 database_name = "whitelist"
-database_id = "REPLACE-WITH-D1-DATABASE-ID"
+database_id = "5ef6e529-48f5-4378-96fd-89fd1673aafb"
 migrations_dir = "migrations"
 
 [vars]
