@@ -3,7 +3,7 @@
 import type { DBLike, Deps, Env, Platform } from './types.ts';
 import { normConfig } from './types.ts';
 import { normalizeForm } from './normalize.ts';
-import { connectInstructions, escapeHtml, htmlResponse, page } from './html.ts';
+import { escapeHtml, howItWorks, htmlResponse, joinHelp, page } from './html.ts';
 import { randomToken, sha256Hex } from './crypto.ts';
 import { verifyTurnstile } from './turnstile.ts';
 import { allowSubmission } from './ratelimit.ts';
@@ -30,8 +30,8 @@ export function renderForm(env: Env, values: FormValues, errors: string[]): stri
     'Whitelist request — mine.sambonius.net',
     `
 <h1><span class="mc">mine.sambonius.net</span> — whitelist request</h1>
-<p class="sub">Two steps: submit this form, then knock on the server door and get turned away. Both are required.</p>
-${connectInstructions({ serverAddress: env.SERVER_ADDRESS, bedrockPort: env.BEDROCK_PORT })}
+<p class="sub">Want in? Takes about two minutes.</p>
+${howItWorks({ serverAddress: env.SERVER_ADDRESS, bedrockPort: env.BEDROCK_PORT })}
 ${err}
 <form class="card" method="post" action="/api/submit">
   <label for="real_name">Your name <small>— so the admin knows who's asking</small></label>
@@ -115,14 +115,17 @@ function submittedPage(env: Env, statusUrl: string, platform: Platform): string 
   return page(
     'Request received — now get rejected',
     `
-<h1>Step 1 done — your request is in</h1>
+<h1>Step 1 done ✔</h1>
 <div class="card">
-<p><strong>Save this link.</strong> It is the only copy — it is not emailed:</p>
+<p><strong>Save this link</strong> — it's your status page, and this is the only copy:</p>
 <p class="biglink"><a href="${escapeHtml(statusUrl)}">${escapeHtml(statusUrl)}</a></p>
 </div>
-${connectInstructions({ serverAddress: env.SERVER_ADDRESS, bedrockPort: env.BEDROCK_PORT }, platform)}
-<p>A receipt email is on its way. Once a human approves your request you'll get another
-email — and the status page above always shows the current state.</p>`,
+<div class="callout">
+<strong>Step 2 — go get rejected:</strong>
+${joinHelp({ serverAddress: env.SERVER_ADDRESS, bedrockPort: env.BEDROCK_PORT }, platform)}
+</div>
+<p>After that, a human decides. The answer arrives by email, and the link above always
+shows where things stand.</p>`,
   );
 }
 

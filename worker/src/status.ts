@@ -3,7 +3,7 @@
 
 import type { DBLike, Env } from './types.ts';
 import { sha256Hex } from './crypto.ts';
-import { connectInstructions, escapeHtml, htmlResponse, page } from './html.ts';
+import { escapeHtml, htmlResponse, joinHelp, page } from './html.ts';
 
 interface StatusRow {
   username: string;
@@ -25,17 +25,16 @@ function renderStatus(env: Env, row: StatusRow): string {
   let tail = '';
   switch (row.status) {
     case 'pending':
-      timeline += dot('todo', 'Waiting for your refused connection attempt.');
+      timeline += dot('todo', 'Waiting for your rejected join attempt.');
       timeline += dot('todo', 'Waiting for a human decision.');
-      tail = connectInstructions(
-        { serverAddress: env.SERVER_ADDRESS, bedrockPort: env.BEDROCK_PORT },
-        row.platform,
-      );
+      tail = `<div class="callout"><strong>Your move — go get rejected:</strong>
+${joinHelp({ serverAddress: env.SERVER_ADDRESS, bedrockPort: env.BEDROCK_PORT }, row.platform)}
+<p class="small">This page updates once we see the attempt.</p></div>`;
       break;
     case 'verified':
-      timeline += dot('done', 'Connection attempt seen — account verified.');
+      timeline += dot('done', 'Join attempt seen — account verified.');
       timeline += dot('todo', 'Waiting for a human decision.');
-      tail = '<p>Nothing more to do. A decision usually follows within a few days.</p>';
+      tail = '<p>Nothing more to do. A decision usually lands within a few days.</p>';
       break;
     case 'approved':
       timeline += dot('done', 'Connection attempt seen — account verified.');

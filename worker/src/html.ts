@@ -57,8 +57,12 @@ button {
 button:hover { background: #347526; }
 .error { color: #b3261e; font-weight: 600; }
 .step { border: 1px solid #ddd6c8; border-radius: 10px; padding: 0.9rem 1.1rem; margin: 0.6rem 0; background: #fffdf8; }
-.step b.n { display: inline-block; background: #3e8e2f; color: #fff; border-radius: 50%;
-  width: 1.5rem; height: 1.5rem; text-align: center; line-height: 1.5rem; margin-right: 0.5rem; }
+.how { margin: 0.45rem 0; }
+.small { font-size: 0.9rem; opacity: 0.8; }
+details { margin: 0.6rem 0 0.2rem; }
+details summary { cursor: pointer; font-weight: 600; color: #a36514; }
+.step b.n, .how b.n { display: inline-block; background: #3e8e2f; color: #fff; border-radius: 50%;
+  width: 1.5rem; height: 1.5rem; text-align: center; line-height: 1.5rem; margin-right: 0.5rem; flex: none; }
 code, .mono { font-family: ui-monospace, Menlo, Consolas, monospace; }
 .addr { font-size: 1.15rem; font-weight: 700; }
 .statusline { display: flex; gap: 0.6rem; align-items: baseline; margin: 0.4rem 0; }
@@ -109,34 +113,40 @@ export interface ConnectCopy {
   bedrockPort: string;
 }
 
-// The deliberate-rejection instructions (§5): must be prominent, and must
-// frame the refused connection as a required step, not an error.
-export function connectInstructions(c: ConnectCopy, platform?: string): string {
+// Short per-platform "how to try joining" cards. Shown where they are
+// actionable: after submitting (only the chosen platform) and on a pending
+// status page. On the form itself they sit folded inside <details>.
+export function joinHelp(c: ConnectCopy, platform?: string): string {
+  const addr = escapeHtml(c.serverAddress);
   const java = `
-<div class="step"><b class="n">J</b><strong>Java Edition:</strong>
-open <em>Multiplayer → Add Server</em>, enter
-<span class="mono addr">${escapeHtml(c.serverAddress)}</span>, then try to join it.</div>`;
+<div class="step"><b class="n">J</b><strong>Java:</strong>
+<em>Multiplayer → Add Server</em> → <span class="mono addr">${addr}</span> → try to join.</div>`;
   const bedrock = `
 <div class="step"><b class="n">B</b><strong>Bedrock (phone / tablet / Windows):</strong>
-open <em>Play → Servers → Add Server</em>, enter address
-<span class="mono addr">${escapeHtml(c.serverAddress)}</span> and port
-<span class="mono">${escapeHtml(c.bedrockPort)}</span>, then try to join it.</div>
-<div class="step"><b class="n">!</b><strong>Bedrock on Xbox / PlayStation / Switch: not supported.</strong>
-Consoles cannot add custom servers, so a console cannot complete this step — and could
-not join the server afterwards either. If you only play on console, please do not fill
-in this form; contact the server admin directly instead. If you also play on a phone,
-tablet, or computer with the same Microsoft account, apply from that device.</div>`;
+<em>Play → Servers → Add Server</em> → address <span class="mono addr">${addr}</span>,
+port <span class="mono">${escapeHtml(c.bedrockPort)}</span> → try to join.</div>`;
   const chosen =
     platform === 'java' ? java : platform === 'bedrock' ? bedrock : java + bedrock;
+  return `${chosen}
+<p class="small">Getting told you're not whitelisted is the goal — that's the moment we're
+waiting for. Then close the game; you're done.</p>`;
+}
+
+// The §5 requirement, minus the essay: the form states prominently that the
+// applicant must try to connect, WILL be refused, and that the refusal is
+// required — in three short lines a kid will actually read. Console policy
+// stays stated plainly before any fields.
+export function howItWorks(c: ConnectCopy): string {
   return `
 <div class="callout">
-<strong>Step 2 is deliberately weird — read this.</strong>
-<p>After you submit the form, you must <strong>attempt to connect</strong> to the server.
-<strong>The connection will be refused.</strong> That refusal is a <em>required step</em>,
-not an error: it is how we confirm the account you named is really yours, because only
-the account holder can knock on the door as that account.</p>
-${chosen}
-<p>Once we see your refused connection attempt, your request is marked verified and goes
-to a human for approval. You'll be able to watch this on your status page.</p>
+<div class="how"><b class="n">1</b> Send this form.</div>
+<div class="how"><b class="n">2</b> Open Minecraft and try to join
+<span class="mono addr">${escapeHtml(c.serverAddress)}</span>.
+<strong>You'll get rejected — on purpose.</strong> That rejection is how we know the
+account is really yours.</div>
+<div class="how"><b class="n">3</b> A human says yes, and you're in.</div>
+<details><summary>Show me how to try joining</summary>${joinHelp(c)}</details>
+<p class="small">On Xbox, PlayStation, or Switch only? Consoles can't add this server, so
+this form won't work for you — message the admin instead.</p>
 </div>`;
 }
