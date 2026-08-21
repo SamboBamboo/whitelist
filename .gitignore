@@ -1,0 +1,16 @@
+node_modules/
+.wrangler/
+dist/
+*.log
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+*.sqlite
+*.sqlite3
+*.db
+.dev.vars
+.env
+host/captured/*
+!host/captured/README.md
