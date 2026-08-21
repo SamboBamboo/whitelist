@@ -1,0 +1,34 @@
+# LAN admin app (§7). Binds 127.0.0.1 only; nginx exposes it to the LAN.
+
+[Unit]
+Description=Whitelist gateway admin app
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=whitelist
+Group=whitelist
+Environment=WHITELIST_CONFIG=/etc/whitelist-gateway/config.toml
+LoadCredential=ADMIN_API_TOKEN:/etc/whitelist-gateway/secrets/admin-api-token
+# Uncomment the one matching [allowlist].backend / reload_via:
+# LoadCredential=MGMT_SECRET:/etc/whitelist-gateway/secrets/mgmt-secret
+# LoadCredential=RCON_PASSWORD:/etc/whitelist-gateway/secrets/rcon-password
+ExecStart=/opt/whitelist-gateway/venv/bin/whitelist-admin
+Restart=always
+RestartSec=10
+
+# Hardening. ReadWritePaths must cover the state db AND whitelist.json when
+# the file tier is in use.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/whitelist-gateway
+# ReadWritePaths=/srv/minecraft/whitelist.json
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

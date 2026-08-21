@@ -1,0 +1,187 @@
+{
+  "comment": "Shared normalization fixtures (spec §4). Both the TypeScript Worker and the Python host code MUST pass every case. Rules: Java underscores are real characters and are never collapsed; Floodgate's transformation is applied forward only and never reversed; trim is ASCII whitespace only ( \\t\\r\\n\\f\\v) so both languages agree; log-sourced input is never trimmed (the log token is exact); match key is always (platform, normalized).",
+  "normalization_version": 1,
+  "cases": [
+    {
+      "id": "java-form-basic",
+      "platform": "java",
+      "source": "form",
+      "input": "Foo_Bar",
+      "config": { "username_prefix": ".", "replace_spaces": true },
+      "expect": { "ok": true, "normalized": "foo_bar" }
+    },
+    {
+      "id": "java-form-double-underscore",
+      "platform": "java",
+      "source": "form",
+      "input": "Foo__Bar",
+      "config": { "username_prefix": ".", "replace_spaces": true },
+      "expect": { "ok": true, "normalized": "foo__bar" },
+      "note": "Distinct from Foo_Bar. Separators are never collapsed."
+    },
+    {
+      "id": "java-form-trim",
+      "platform": "java",
+      "source": "form",
+      "input": "  Foo_Bar\t",
+      "config": { "username_prefix": ".", "replace_spaces": true },
+      "expect": { "ok": true, "normalized": "foo_bar" }
+    },
+    {
+      "id": "java-form-mixed-case",
+      "platform": "java",
+      "source": "form",
+      "input": "FoO_bAr",
+      "config": { "username_prefix": ".", "replace_spaces": true },
+      "expect": { "ok": true, "normalized": "foo_bar" }
+    },
+    {
+      "id": "java-form-max-length",
+      "platform": "java",
+      "source": "form",
+      "input": "Abcdefghijklmnop",
+      "config": { "username_prefix": ".", "replace_spaces": true },
+      "expect": { "ok": true, "normalized": "abcdefghijklmnop" }
+    },
+    {
+      "id": "java-form-empty",
+      "platform": "java",
+      "source": "form",
+      "input": "   ",
+      "config": { "username_prefix": ".", "replace_spaces": true },
+      "expect": { "ok": false, "error": "empty" }
+    },
+    {
+      "id": "java-form-nbsp-not-trimmed",
+      "platform": "java",
+      "source": "form",
+      "input": " Foo",
+      "config": { "username_prefix": ".", "replace_spaces": true },
+      "expect": { "ok": true, "normalized": " foo" },
+      "note": "Trim is ASCII-only so both languages behave identically. Non-ASCII whitespace survives normalization and is rejected by the validation layer instead."
+    },
+    {
+      "id": "java-log-exact",
+      "platform": "java",
+      "source": "log",
+      "input": "Foo_Bar",
+      "config": { "username_prefix": ".", "replace_spaces": true },
+      "expect": { "ok": true, "normalized": "foo_bar" }
+    },
+    {
+      "id": "bedrock-form-space",
+      "platform": "bedrock",
+      "source": "form",
+      "input": "Cave Johnson",
+      "config": { "username_prefix": ".", "replace_spaces": true },
+      "expect": { "ok": true, "normalized": "cave_johnson" }
+    },
+    {
+      "id": "bedrock-form-space-kept-when-disabled",
+      "platform": "bedrock",
+      "source": "form",
+      "input": "Cave Johnson",
+      "config": { "username_prefix": ".", "replace_spaces": false },
+      "expect": { "ok": true, "normalized": "cave johnson" }
+    },
+    {
+      "id": "bedrock-form-double-space",
+      "platform": "bedrock",
+      "source": "form",
+      "input": "Cave  Johnson",
+      "config": { "username_prefix": ".", "replace_spaces": true },
+      "expect": { "ok": true, "normalized": "cave__johnson" },
+      "note": "Each space becomes one underscore. Never collapsed."
+    },
+    {
+      "id": "bedrock-form-trim-before-replace",
+      "platform": "bedrock",
+      "source": "form",
+      "input": " Cave Johnson ",
+      "config": { "username_prefix": ".", "replace_spaces": true },
+      "expect": { "ok": true, "normalized": "cave_johnson" },
+      "note": "Trim happens before space replacement, so edge whitespace never turns into underscores."
+    },
+    {
+      "id": "bedrock-form-underscore-collision",
+      "platform": "bedrock",
+      "source": "form",
+      "input": "Cave_Johnson",
+      "config": { "username_prefix": ".", "replace_spaces": true },
+      "expect": { "ok": true, "normalized": "cave_johnson" },
+      "note": "Collides with 'Cave Johnson'. This is Floodgate's lossy one-way mapping, not a bug — the server cannot distinguish them. The admin UI surfaces collisions rather than auto-resolving."
+    },
+    {
+      "id": "bedrock-form-mixed-case",
+      "platform": "bedrock",
+      "source": "form",
+      "input": "CAVE johnson",
+      "config": { "username_prefix": ".", "replace_spaces": true },
+      "expect": { "ok": true, "normalized": "cave_johnson" }
+    },
+    {
+      "id": "bedrock-form-empty",
+      "platform": "bedrock",
+      "source": "form",
+      "input": "  ",
+      "config": { "username_prefix": ".", "replace_spaces": true },
+      "expect": { "ok": false, "error": "empty" }
+    },
+    {
+      "id": "bedrock-log-prefixed",
+      "platform": "bedrock",
+      "source": "log",
+      "input": ".Cave_Johnson",
+      "config": { "username_prefix": ".", "replace_spaces": true },
+      "expect": { "ok": true, "normalized": "cave_johnson" },
+      "note": "Underscores from the log are NEVER converted back to spaces. The result is cave_johnson, not 'cave johnson'."
+    },
+    {
+      "id": "bedrock-log-prefix-missing",
+      "platform": "bedrock",
+      "source": "log",
+      "input": "Cave_Johnson",
+      "config": { "username_prefix": ".", "replace_spaces": true },
+      "expect": { "ok": false, "error": "prefix_missing" },
+      "note": "A prefix was configured but the logged name does not carry it. Refuse rather than guess."
+    },
+    {
+      "id": "bedrock-log-empty-prefix-config",
+      "platform": "bedrock",
+      "source": "log",
+      "input": "CaveJohnson",
+      "config": { "username_prefix": "", "replace_spaces": true },
+      "expect": { "ok": true, "normalized": "cavejohnson" }
+    },
+    {
+      "id": "bedrock-log-prefix-only",
+      "platform": "bedrock",
+      "source": "log",
+      "input": ".",
+      "config": { "username_prefix": ".", "replace_spaces": true },
+      "expect": { "ok": false, "error": "empty" }
+    },
+    {
+      "id": "bedrock-log-mixed-case",
+      "platform": "bedrock",
+      "source": "log",
+      "input": ".CaVe_JoHnSoN",
+      "config": { "username_prefix": ".", "replace_spaces": true },
+      "expect": { "ok": true, "normalized": "cave_johnson" }
+    }
+  ],
+  "distinct_pairs": [
+    {
+      "comment": "These pairs MUST normalize to different keys (underscores are real).",
+      "a": { "platform": "java", "source": "form", "input": "Foo_Bar" },
+      "b": { "platform": "java", "source": "form", "input": "Foo__Bar" }
+    }
+  ],
+  "colliding_pairs": [
+    {
+      "comment": "These pairs normalize to the SAME key by design (Floodgate lossy mapping). The admin UI must surface such collisions.",
+      "a": { "platform": "bedrock", "source": "form", "input": "Cave Johnson" },
+      "b": { "platform": "bedrock", "source": "form", "input": "Cave_Johnson" }
+    }
+  ]
+}

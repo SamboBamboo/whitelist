@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Whitelist admin{% endblock %}</title>
+<style>
+:root { color-scheme: light dark; }
+* { box-sizing: border-box; }
+body { font-family: system-ui, sans-serif; margin: 0; padding: 1rem 1.25rem 4rem;
+       background: #f4f2ec; color: #232019; }
+@media (prefers-color-scheme: dark) {
+  body { background: #191714; color: #ece7dc; }
+  .card, table { background: #211e1a !important; border-color: #3a352d !important; }
+  th, td { border-color: #3a352d !important; }
+  a { color: #8fc97a; }
+}
+nav { margin-bottom: 1rem; }
+nav a { margin-right: 1rem; font-weight: 600; }
+h1 { font-size: 1.35rem; }
+h2 { font-size: 1.05rem; margin-top: 1.6rem; }
+.card { background: #fffdf8; border: 1px solid #ddd6c8; border-radius: 10px;
+        padding: 1rem 1.15rem; margin: 0.8rem 0; }
+table { border-collapse: collapse; width: 100%; background: #fffdf8;
+        border: 1px solid #ddd6c8; font-size: 0.92rem; }
+th, td { border: 1px solid #ddd6c8; padding: 0.4rem 0.6rem; text-align: left;
+         vertical-align: top; }
+code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85em;
+       word-break: break-all; }
+.badge { display: inline-block; border-radius: 6px; padding: 0.1rem 0.5rem;
+         font-size: 0.8rem; font-weight: 700; }
+.badge.pending  { background: #e8e2d2; color: #6b6353; }
+.badge.verified { background: #d9ecd0; color: #2f6b22; }
+.badge.approved { background: #3e8e2f; color: #fff; }
+.badge.denied, .badge.expired { background: #e7d2d0; color: #8e2f2f; }
+.badge.warn { background: #fbf3e3; color: #a36514; border: 1px solid #c98a2b; }
+button { padding: 0.4rem 0.9rem; border-radius: 7px; border: 1px solid #bdb5a4;
+         background: #fffdf8; cursor: pointer; font-size: 0.9rem; }
+button.primary { background: #3e8e2f; border-color: #3e8e2f; color: #fff; }
+button.danger  { background: #b3261e; border-color: #b3261e; color: #fff; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+.msg { margin: 0.4rem 0; font-weight: 600; }
+.msg.err { color: #b3261e; }
+.small { font-size: 0.85rem; opacity: 0.75; }
+.mono { font-family: ui-monospace, Menlo, Consolas, monospace; }
+</style>
+</head>
+<body>
+<nav>
+  <a href="/">Review queue</a>
+  <a href="/attempts">Attempts</a>
+  <a href="/allowlist">Allowlist</a>
+</nav>
+{% block body %}{% endblock %}
+<script>
+// Mutations go through fetch with the custom header: a plain cross-origin
+// form post cannot set X-Admin-Request, so it can never pass the guard.
+async function act(path, payload, btn) {
+  if (btn) btn.disabled = true;
+  const out = document.getElementById('actmsg');
+  out.textContent = 'Working…'; out.className = 'msg';
+  try {
+    const res = await fetch(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Request': '1' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    out.textContent = data.message || data.error || res.status;
+    out.className = res.ok ? 'msg' : 'msg err';
+    if (res.ok) setTimeout(() => location.reload(), 900);
+  } catch (e) {
+    out.textContent = 'Request failed: ' + e;
+    out.className = 'msg err';
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+function approve(id, btn) { act('/api/approve', { submission_id: id, notes: prompt('Notes (optional):') || null }, btn); }
+function deny(id, btn) { if (confirm('Deny #' + id + '?')) act('/api/deny', { submission_id: id, notes: prompt('Notes (optional):') || null }, btn); }
+function retryOp(id, btn) { act('/api/retry', { submission_id: id }, btn); }
+function abandonOp(id, btn) { if (confirm('Abandon the stuck decision for #' + id + '? Any applied allowlist entry is removed.')) act('/api/abandon', { submission_id: id }, btn); }
+function removeEntry(name, uuid, btn) { if (confirm('Remove ' + (name || uuid) + ' from the allowlist?')) act('/api/remove', { name: name, uuid: uuid }, btn); }
+</script>
+</body>
+</html>

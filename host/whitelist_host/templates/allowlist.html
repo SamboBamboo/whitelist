@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Allowlist{% endblock %}
+{% block body %}
+<h1>Current allowlist</h1>
+<p id="actmsg" class="msg"></p>
+<table>
+  <tr><th>Name</th><th>UUID</th><th></th></tr>
+  {% for e in entries %}
+  <tr>
+    <td><code>{{ e.name }}</code></td>
+    <td><code>{{ e.uuid }}</code></td>
+    <td><button class="danger"
+        onclick="removeEntry({{ e.name | tojson }}, {{ e.uuid | tojson }}, this)">Remove</button></td>
+  </tr>
+  {% endfor %}
+</table>
+
+{% if pending_ops %}
+<h2>In-flight decisions</h2>
+<table>
+  <tr><th>Submission</th><th>Decision</th><th>State</th><th>Attempts</th><th>Last error</th><th></th></tr>
+  {% for op in pending_ops %}
+  <tr>
+    <td>#{{ op.submission_id }}</td>
+    <td>{{ op.decision }}</td>
+    <td><code>{{ op.state }}</code></td>
+    <td>{{ op.attempts_made }}</td>
+    <td class="small">{{ op.last_error or '' }}</td>
+    <td>
+      <button onclick="retryOp({{ op.submission_id }}, this)">Retry</button>
+      <button class="danger" onclick="abandonOp({{ op.submission_id }}, this)">Abandon</button>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
+<h2>Audit trail (latest 50)</h2>
+<table>
+  <tr><th>When</th><th>Action</th><th>Submission</th><th>UUID</th><th>By</th><th>Detail</th></tr>
+  {% for a in audit %}
+  <tr>
+    <td>{{ a.at | timestamp }}</td>
+    <td><code>{{ a.action }}</code></td>
+    <td>{{ '#' ~ a.submission_id if a.submission_id else '—' }}</td>
+    <td><code>{{ a.uuid or '—' }}</code></td>
+    <td>{{ a.reviewer or '—' }}</td>
+    <td class="small">{{ a.detail }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

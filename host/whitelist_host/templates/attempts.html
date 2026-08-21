@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Recent attempts{% endblock %}
+{% block body %}
+<h1>Attempts (last 7 days)</h1>
+<p class="small">Every classified authenticated session. <code>joined</code> is
+normal traffic; <code>whitelist_rejected</code> is the qualifying outcome;
+<code>unresolved</code> means the classifier saw no terminal event and warrants
+a look at the daemon log.</p>
+<p id="actmsg" class="msg"></p>
+<table>
+  <tr><th>Seen</th><th>Platform</th><th>Raw name</th><th>Normalized</th>
+      <th>UUID</th><th>Outcome</th><th>Matched submission</th></tr>
+  {% for a in attempts %}
+  <tr>
+    <td>{{ a.seen_at | timestamp }}</td>
+    <td>{{ a.platform }}</td>
+    <td><code>{{ a.raw_username }}</code></td>
+    <td><code>{{ a.normalized }}</code></td>
+    <td><code>{{ a.uuid }}</code></td>
+    <td><code>{{ a.outcome }}</code></td>
+    <td>{{ '#' ~ a.submission_id if a.submission_id else '—' }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}

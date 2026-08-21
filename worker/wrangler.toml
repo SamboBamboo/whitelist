@@ -1,0 +1,40 @@
+name = "whitelist-gateway"
+main = "src/index.ts"
+compatibility_date = "2025-08-01"
+
+# Public site + API. mine.sambonius.net (the game server) stays DNS-only /
+# grey-cloud at Cloudflare — Minecraft is not HTTP and proxying does not
+# carry it. Only this HTTP host is proxied.
+routes = [
+  { pattern = "whitelist.sambonius.net", custom_domain = true }
+]
+
+[triggers]
+crons = ["17 9 * * *"] # daily maintenance (§5 cron)
+
+[[d1_databases]]
+binding = "DB"
+database_name = "whitelist"
+database_id = "REPLACE-WITH-D1-DATABASE-ID"
+migrations_dir = "migrations"
+
+[vars]
+# --- Normalization pin (§4 config drift guard). Changing any of these is a
+# --- migration, not a config edit: bump NORMALIZATION_VERSION and plan for
+# --- in-flight submissions, which keep the version they were created with.
+FLOODGATE_PREFIX = "."
+REPLACE_SPACES = "true"
+NORMALIZATION_VERSION = "1"
+
+# --- Site copy / addresses
+BASE_URL = "https://whitelist.sambonius.net"
+SERVER_ADDRESS = "mine.sambonius.net"
+BEDROCK_PORT = "19132"          # confirm against the actual Geyser bind port
+TURNSTILE_SITE_KEY = "REPLACE-WITH-TURNSTILE-SITE-KEY"
+EMAIL_FROM = "Whitelist Gateway <whitelist@sambonius.net>"
+
+# Secrets (set with `wrangler secret put NAME`, never committed):
+#   TURNSTILE_SECRET   — Turnstile secret key
+#   RESEND_API_KEY     — Resend API key
+#   DAEMON_TOKEN       — read/verify token for the matcher daemon
+#   ADMIN_API_TOKEN    — decision token for the LAN admin app

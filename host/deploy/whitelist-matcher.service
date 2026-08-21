@@ -1,0 +1,40 @@
+# Matcher daemon (§6). Install:
+#   cp whitelist-matcher.service /etc/systemd/system/
+#   systemctl daemon-reload && systemctl enable --now whitelist-matcher
+#
+# Secrets arrive via LoadCredential (§9): each named file is exposed to the
+# process at $CREDENTIALS_DIRECTORY/<name>, readable by this service only.
+
+[Unit]
+Description=Whitelist gateway matcher daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=whitelist
+Group=whitelist
+# Needs read access to the Minecraft logs + Floodgate config; add the
+# minecraft group if that's how file permissions are arranged:
+# SupplementaryGroups=minecraft
+Environment=WHITELIST_CONFIG=/etc/whitelist-gateway/config.toml
+LoadCredential=DAEMON_TOKEN:/etc/whitelist-gateway/secrets/daemon-token
+LoadCredential=TELEGRAM_BOT_TOKEN:/etc/whitelist-gateway/secrets/telegram-bot-token
+ExecStart=/opt/whitelist-gateway/venv/bin/whitelist-matcher
+Restart=always
+# A drift abort (§4) exits 1 on purpose; keep the restart loop slow enough
+# to read the journal.
+RestartSec=60
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/whitelist-gateway
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

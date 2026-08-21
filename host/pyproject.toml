@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "whitelist-host"
+version = "0.1.0"
+description = "Minecraft-host half of the whitelist gateway: matcher daemon + LAN admin app + capability probe"
+requires-python = ">=3.11"
+dependencies = [
+    "PyYAML>=6.0",       # Floodgate config.yml (drift guard)
+    "Flask>=3.0",        # LAN admin app
+    "waitress>=3.0",     # WSGI server for the admin app (binds 127.0.0.1 behind nginx)
+]
+
+[project.optional-dependencies]
+management = ["websockets>=13.0"]  # Management Protocol client + §0 probe
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+whitelist-matcher = "whitelist_host.matcher:main"
+whitelist-admin = "whitelist_host.adminapp:main"
+whitelist-probe = "whitelist_host.probe:main"
+
+[tool.setuptools.packages.find]
+include = ["whitelist_host*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

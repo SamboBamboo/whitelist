@@ -1,0 +1,55 @@
+# Whitelist gateway — host configuration.
+# Copy to /etc/whitelist-gateway/config.toml and adjust. Secrets do NOT go
+# here (§9): they come from systemd LoadCredential= (see deploy/*.service)
+# or from 0600 files referenced under [secret_files].
+
+[worker]
+base_url = "https://whitelist.sambonius.net"
+
+[paths]
+db = "/var/lib/whitelist-gateway/state.sqlite"
+server_log = "/srv/minecraft/logs/latest.log"
+floodgate_config = "/srv/minecraft/plugins/floodgate/config.yml"
+whitelist_json = "/srv/minecraft/whitelist.json"
+
+[matcher]
+poll_interval_s = 60
+session_window_s = 45
+tail_interval_s = 1.0
+
+[telegram]
+enabled = true
+chat_id = "REPLACE-WITH-CHAT-ID"
+
+[admin]
+bind_host = "127.0.0.1"        # nginx fronts this on the LAN interface
+bind_port = 8080
+# The exact origin the admin browser uses — nginx's LAN address. Mutations
+# from any other origin (or with no Origin header) are rejected.
+allowed_origins = ["http://192.168.1.10"]
+reviewer = "sam"
+
+[allowlist]
+# Chosen by the §0 probe, in preference order:
+#   "management" — Tier 1, only after `whitelist-probe add-test` passes
+#                  END-TO-END (including the real-account join, step 3)
+#                  for BOTH platforms
+#   "rcon"       — Tier 2, commands via RCON, read-back via whitelist.json
+#   "file"       — Tier 3, direct whitelist.json editing
+backend = "file"
+# file tier only: how `whitelist reload` is issued after an edit —
+# "rcon", "management", or "none" (operator reloads manually).
+reload_via = "rcon"
+
+[management]
+url = "ws://127.0.0.1:25585"
+
+[rcon]
+host = "127.0.0.1"
+port = 25575
+
+# Fallback secret files if not using systemd credentials. chmod 0600, owned
+# by the service user. Keys: DAEMON_TOKEN, ADMIN_API_TOKEN,
+# TELEGRAM_BOT_TOKEN, MGMT_SECRET, RCON_PASSWORD.
+[secret_files]
+# DAEMON_TOKEN = "/etc/whitelist-gateway/secrets/daemon-token"

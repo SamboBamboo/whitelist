@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Review queue{% endblock %}
+{% block body %}
+<h1>Review queue</h1>
+<p id="actmsg" class="msg"></p>
+
+{% if not data.submissions %}
+<div class="card">Nothing waiting. 🎉</div>
+{% endif %}
+
+{% for sub in data.submissions %}
+<div class="card">
+  <p>
+    <span class="badge {{ sub.status }}">{{ sub.status }}</span>
+    <strong>#{{ sub.id }} {{ sub.username }}</strong> ({{ sub.platform }})
+    {% if not sub.version_ok %}
+      <span class="badge warn">normalization v{{ sub.normalization_version }} — needs manual handling</span>
+    {% endif %}
+  </p>
+  <table>
+    <tr>
+      <th></th><th>Claimed on the form</th><th>Observed in the log</th>
+    </tr>
+    <tr>
+      <th>Name</th>
+      <td>{{ sub.username }} <span class="small">by {{ sub.real_name or '—' }} &lt;{{ sub.email or '—' }}&gt;</span></td>
+      <td><code>{{ sub.raw_username or '—' }}</code></td>
+    </tr>
+    <tr>
+      <th>Identity</th>
+      <td>match key <code>{{ sub.platform }}/{{ sub.normalized }}</code></td>
+      <td>UUID <code>{{ sub.uuid or '—' }}</code>{% if sub.xuid %} · XUID <code>{{ sub.xuid }}</code>{% endif %}</td>
+    </tr>
+    <tr>
+      <th>Timing</th>
+      <td>submitted {{ sub.created_at | timestamp }}<br>expires {{ sub.expires_at | timestamp }}</td>
+      <td>
+        {% if sub.attempt %}
+          attempt {{ sub.attempt.seen_at | timestamp }} · outcome <code>{{ sub.attempt.outcome }}</code>
+        {% elif sub.attempt_event_id %}
+          attempt <code>{{ sub.attempt_event_id[:12] }}…</code> (verified before this host's records)
+        {% else %}
+          no qualifying attempt yet
+        {% endif %}
+      </td>
+    </tr>
+  </table>
+
+  {% if sub.candidates and not sub.attempt %}
+  <p class="small">Nearby attempts with this match key (troubleshooting; ineligible ones can verify nothing):</p>
+  <table>
+    <tr><th>Seen</th><th>Raw name</th><th>Outcome</th><th>Eligible?</th></tr>
+    {% for c in sub.candidates %}
+    <tr>
+      <td>{{ c.seen_at | timestamp }}</td>
+      <td><code>{{ c.raw_username }}</code></td>
+      <td><code>{{ c.outcome }}</code></td>
+      <td>{{ 'yes' if c.eligible else 'no' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+
+  {% if sub.outbox_msg %}
+    <p class="msg">{{ sub.outbox_msg }}</p>
+    {% if sub.outbox and sub.outbox.state != 'complete' %}
+      <button onclick="retryOp({{ sub.id }}, this)">Retry now</button>
+      <button class="danger" onclick="abandonOp({{ sub.id }}, this)">Abandon</button>
+    {% endif %}
+  {% else %}
+    <p>
+      <button class="primary" onclick="approve({{ sub.id }}, this)"
+        {% if not sub.approvable %}disabled title="Approval needs a verified submission with a stored UUID (and no in-flight decision)"{% endif %}>
+        Approve</button>
+      <button class="danger" onclick="deny({{ sub.id }}, this)">Deny</button>
+    </p>
+  {% endif %}
+</div>
+{% endfor %}
+
+<h2>Recently decided</h2>
+<table>
+  <tr><th>#</th><th>Username</th><th>Platform</th><th>Status</th><th>By</th><th>When</th><th>Writeback</th></tr>
+  {% for sub in data.recent_terminal %}
+  <tr>
+    <td>{{ sub.id }}</td>
+    <td>{{ sub.username }}</td>
+    <td>{{ sub.platform }}</td>
+    <td><span class="badge {{ sub.status }}">{{ sub.status }}</span></td>
+    <td>{{ sub.reviewer or '—' }}</td>
+    <td>{{ (sub.decided_at or sub.terminal_at) | timestamp }}</td>
+    <td class="small">{{ sub.outbox_msg or '' }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}
