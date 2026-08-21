@@ -1,4 +1,4 @@
-name = "whitelist-gateway"
+name = "whitelist"
 main = "src/index.ts"
 compatibility_date = "2025-08-01"
 
